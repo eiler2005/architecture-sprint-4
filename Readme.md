@@ -5,3 +5,5 @@
 ![img_1.png](resources/img_1.png)
 
 ![img_2.png](resources/img_2.png)
+
+решение в каталогах Exc..N

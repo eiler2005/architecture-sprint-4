@@ -1,0 +1,79 @@
+@startuml
+skinparam rectangle {
+  BackgroundColor<<App>> #D4E157
+  BorderColor<<App>> #AFB42B
+  BackgroundColor<<API>> #4FC3F7
+  BorderColor<<API>> #0288D1
+  BackgroundColor<<Service>> #FFAB91
+  BorderColor<<Service>> #D84315
+  BackgroundColor<<Logging>> #B39DDB
+  BorderColor<<Logging>> #5E35B1
+  BackgroundColor<<Database>> #FFF176
+  BorderColor<<Database>> #FBC02D
+}
+
+title C4 Diagram: Logging Architecture
+
+actor Developer as Dev
+actor SupportEngineer as Support
+actor Auditor as Auditor
+actor DevOps as DevOps
+actor ProductOwner as PO
+actor Administrator as Admin
+
+rectangle "Shop System" <<App>> {
+  [Internet Shop (Vue)] as ShopUI
+  [Shop API (Spring Boot)] as ShopAPI <<API>>
+}
+
+rectangle "CRM System" <<App>> {
+  [CRM UI (Vue)] as CRMUI
+  [CRM API (Spring Boot)] as CRMAPI <<API>>
+}
+
+rectangle "MES System" <<App>> {
+  [MES UI (React)] as MESUI
+  [MES API (.NET)] as MESAPI <<API>>
+}
+
+rectangle "Logging and Monitoring" <<Logging>> {
+  [ELK Stack (Elasticsearch, Logstash, Kibana)] as ELK
+  [Prometheus] as Prometheus
+  [OpenTelemetry] as OpenTelemetry
+  [Log Storage (S3)] as S3Storage
+}
+
+database "Shop Database (PostgreSQL)" as ShopDB <<Database>>
+database "CRM Database (PostgreSQL)" as CRMDB <<Database>>
+database "MES Database (PostgreSQL)" as MESDB <<Database>>
+
+ShopUI --> ShopAPI : Sends requests
+CRMUI --> CRMAPI : Sends requests
+MESUI --> MESAPI : Sends requests
+
+ShopAPI --> ShopDB : Writes logs
+CRMAPI --> CRMDB : Writes logs
+MESAPI --> MESDB : Writes logs
+
+ShopAPI --> ELK : Sends logs
+CRMAPI --> ELK : Sends logs
+MESAPI --> ELK : Sends logs
+
+ShopAPI --> OpenTelemetry : Sends traces
+CRMAPI --> OpenTelemetry : Sends traces
+MESAPI --> OpenTelemetry : Sends traces
+
+ELK --> S3Storage : Archives logs
+
+Prometheus --> ELK : Sends metrics
+ShopAPI --> Prometheus : Sends performance metrics
+CRMAPI --> Prometheus : Sends performance metrics
+MESAPI --> Prometheus : Sends performance metrics
+
+Dev --> ELK : Limited read access for debugging
+Support --> ELK : Read-only access for operational issues
+Admin --> ELK : Full administrative access to all logs and configurations
+Auditor --> S3Storage : Read-only access for audit purposes
+DevOps --> ELK : Full access for infrastructure logs and performance metrics
+PO --> ELK : Limited read access to dashboards and high-level business metrics
+@enduml

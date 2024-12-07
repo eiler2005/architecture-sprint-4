@@ -1,0 +1,83 @@
+@startuml
+skinparam rectangle {
+  BackgroundColor<<App>> #D4E157
+  BorderColor<<App>> #AFB42B
+  BackgroundColor<<ExternalAPI>> #4FC3F7
+  BorderColor<<ExternalAPI>> #0288D1
+  BackgroundColor<<InternalAPI>> #FFAB91
+  BorderColor<<InternalAPI>> #D84315
+  BackgroundColor<<Monitoring>> #B39DDB
+  BorderColor<<Monitoring>> #5E35B1
+  BackgroundColor<<Database>> #FFF176
+  BorderColor<<Database>> #FBC02D
+}
+
+title Container Diagram: Target Architecture in 6 Months
+
+actor Client as C
+actor Partner as P
+actor Operator as O
+actor Manager as M
+
+rectangle "Shop System" <<App>> {
+  [Internet Shop (Vue)] as ShopUI
+  [Shop API (Spring Boot)] as ShopAPI <<ExternalAPI>>
+}
+
+rectangle "CRM System" <<App>> {
+  [CRM UI (Vue)] as CRMUI
+  [CRM API (Spring Boot)] as CRMAPI <<ExternalAPI>>
+}
+
+rectangle "MES System" <<App>> {
+  [MES UI (React)] as MESUI
+  [MES API (.NET)] as MESAPI <<InternalAPI>>
+  [Redis Cache] as MESCache <<Service>>
+  [Internal API (.NET)] as InternalRoutingAPI <<InternalAPI>>
+}
+
+rectangle "Monitoring and Observability" <<Monitoring>> {
+  [Prometheus] as Prometheus
+  [Grafana] as Grafana
+  [ELK Stack (Elasticsearch, Logstash, Kibana)] as ELK
+  [OpenTelemetry] as OpenTelemetry
+}
+
+database "Shop Database (PostgreSQL)" as ShopDB <<Database>>
+database "CRM Database (PostgreSQL)" as CRMDB <<Database>>
+database "Read Replica (PostgreSQL)" as ShopReplica <<Database>>
+database "MES Database (PostgreSQL)" as MESDB <<Database>>
+
+C --> ShopUI : Interacts with
+P --> ShopAPI : Sends requests
+O --> MESUI : Manages production
+M --> CRMUI : Manages orders
+
+ShopUI --> ShopAPI : Sends order requests
+ShopAPI --> CRMAPI : Sends orders
+CRMUI --> CRMAPI : Interacts
+CRMAPI --> InternalRoutingAPI : Sends production orders
+InternalRoutingAPI --> MESAPI : Routes orders
+MESUI --> MESAPI : Manages tasks
+MESAPI --> MESCache : Uses cache
+MESAPI --> MESDB : Writes production data
+MESAPI --> ShopReplica : Reads product data
+CRMAPI --> CRMDB : Reads/Writes order data
+ShopAPI --> ShopReplica : Reads product data
+
+ShopAPI --> Prometheus : Sends metrics
+CRMAPI --> Prometheus : Sends metrics
+MESAPI --> Prometheus : Sends metrics
+InternalRoutingAPI --> Prometheus : Sends metrics
+MESAPI --> ELK : Sends logs
+CRMAPI --> ELK : Sends logs
+ShopAPI --> ELK : Sends logs
+MESAPI --> OpenTelemetry : Sends traces
+CRMAPI --> OpenTelemetry : Sends traces
+ShopAPI --> OpenTelemetry : Sends traces
+InternalRoutingAPI --> OpenTelemetry : Sends traces
+
+Prometheus --> Grafana : Provides metrics visualization
+ELK --> Grafana : Provides log data visualization
+
+@enduml

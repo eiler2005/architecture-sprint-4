@@ -1,0 +1,62 @@
+@startuml
+skinparam rectangle {
+  BackgroundColor<<App>> #ADD8E6
+  BorderColor<<App>> #000000
+  BackgroundColor<<API>> #87CEEB
+  BorderColor<<API>> #4682B4
+  BackgroundColor<<Service>> #FFD700
+  BorderColor<<Service>> #DAA520
+  BackgroundColor<<Queue>> #B3E5FC
+  BorderColor<<Queue>> #0288D1
+  BackgroundColor<<Database>> #FFAB91
+  BorderColor<<Database>> #D84315
+}
+
+title C4 Diagram: Components with RabbitMQ and Cache Adjustments
+
+actor Customer as C
+actor Operator as O
+
+package "Jewelry Store System" {
+  rectangle "Internet Shop" as ShopUI <<App>>
+  rectangle "Shop API" as ShopAPI <<API>>
+
+  rectangle "CRM UI" as CRMUI <<App>>
+  rectangle "CRM API" as CRMAPI <<API>>
+
+  rectangle "MES UI" as MESUI <<App>>
+  rectangle "MES API" as MESAPI <<API>>
+
+  queue "RabbitMQ" as RabbitMQ <<Queue>>
+
+  rectangle "Cache" as Cache <<Service>>
+  database "Shop DB" as ShopDB <<Database>>
+  database "CRM DB" as CRMDB <<Database>>
+  database "MES DB" as MESDB <<Database>>
+}
+
+C --> ShopUI : Places Order
+ShopUI --> ShopAPI : Sends Order Request
+ShopAPI --> RabbitMQ : Sends Events
+ShopAPI --> Cache : Reads/Writes Cache
+ShopAPI --> ShopDB : Reads/Writes Data
+
+O --> MESUI : Processes Orders
+MESUI --> MESAPI : Sends Tasks
+MESAPI --> Cache : Reads/Writes Cache
+MESAPI --> RabbitMQ : Publishes Events
+MESAPI --> MESDB : Reads/Writes Data
+
+CRMUI --> CRMAPI : Manages Customer Data
+CRMAPI --> Cache : Reads/Writes Cache
+CRMAPI --> RabbitMQ : Publishes Events
+CRMAPI --> CRMDB : Reads/Writes Data
+
+RabbitMQ --> ShopAPI : Sends Notifications
+RabbitMQ --> MESAPI : Sends Notifications
+RabbitMQ --> CRMAPI : Sends Notifications
+
+Cache --> ShopDB : Invalidation
+Cache --> CRMDB : Invalidation
+Cache --> MESDB : Invalidation
+@enduml

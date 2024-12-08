@@ -1,0 +1,24 @@
+@startuml
+actor Client
+actor RabbitMQ
+
+participant "API Gateway" as Gateway
+participant "Service" as Service
+participant "Cache" as Cache
+participant "Database" as DB
+
+Client -> Gateway: Запрос данных
+Gateway -> Cache: Проверка кеша
+alt Данные есть в кеше
+    Cache --> Gateway: Возврат данных
+else Данных нет в кеше
+    Cache --> Service: Пропуск
+    Service -> DB: Запрос данных
+    DB --> Service: Возврат данных
+    Service -> Cache: Обновление кеша (Write-Through)
+    Cache --> Gateway: Возврат данных
+end
+
+RabbitMQ -> Service: Уведомление об изменении
+Service -> Cache: Инвалидация данных
+@enduml
